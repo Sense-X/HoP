@@ -71,7 +71,7 @@ python tools/train.py configs/hop_bevdet/hop_bevdet4d-r50-depth.py
 ./tools/dist_train.sh configs/hop_bevdet/hop_bevdet4d-r50-depth.py $num_gpu
 ```
 
-### Eval HoP()
+### Eval HoP
 
 ```bash
 # single gpu
@@ -87,6 +87,7 @@ python tools/test.py configs/hop_bevdet/hop_bevdet4d-r50-depth.py $checkpoint --
 ## TODO
 
 - [ ] Release code for HoP on BEVFormer.
+
 
 ## Cite HoP
 
