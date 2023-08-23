@@ -76,24 +76,23 @@ class LoadMultiViewImageFromFiles(object):
         repr_str += f'(to_float32={self.to_float32}, '
         repr_str += f"color_type='{self.color_type}')"
         return repr_str
-    
+
     def load_image(self, filename, color_type):
         if self.file_client_args is None or self.file_client_args['backend'] == 'disk':
-            load_fun = mmcv.load
+            load_fun = lambda x: Image.open(x)
 
         elif self.file_client_args['backend'] == 'petrel':
-            self.file_client = mmcv.FileClient(**self.file_client_args)
             def petrel_load_image(name, color_type):
                 img_bytes = self.file_client.get(name)
-                return mmcv.imfrombytes(img_bytes, flag=color_type)    
-            load_fun = petrel_load_image
+                img_array = mmcv.imfrombytes(img_bytes, flag=color_type, channel_order='rgb', backend='pillow')
+                return Image.fromarray(img_array.astype(np.uint8), mode='RGB')
 
+            load_fun = lambda x: petrel_load_image(x, color_type)
         else:
             raise NotImplementedError(f'File client args is {self.file_client_args}')
-        
-        return  np.stack(
-                    [load_fun(name, color_type) for name in filename], axis=-1)
 
+        return np.stack(
+            [load_fun(name) for name in filename], axis=-1)
 
 @PIPELINES.register_module()
 class LoadImageFromFileMono3D(LoadImageFromFile):
@@ -1137,19 +1136,19 @@ class PrepareImageInputs(object):
         Validated 
         '''
         if self.file_client_args is None or self.file_client_args['backend'] == 'disk':
-            load_fun = mmcv.load
+            load_fun = lambda x: Image.open(x)
 
         elif self.file_client_args['backend'] == 'petrel':
             def petrel_load_image(name, color_type):
                 img_bytes = self.file_client.get(name)
-                return mmcv.imfrombytes(img_bytes, flag=color_type, channel_order='rgb',backend='pillow')    
-            load_fun = petrel_load_image
+                img_array = mmcv.imfrombytes(img_bytes, flag=color_type, channel_order='rgb', backend='pillow')
+                return Image.fromarray(img_array.astype(np.uint8), mode='RGB')
 
+            load_fun = lambda x: petrel_load_image(x, color_type)
         else:
             raise NotImplementedError(f'File client args is {self.file_client_args}')
-        
-        img_array = load_fun(filename, color_type)
-        img_pil = Image.fromarray(img_array.astype(np.uint8), mode='RGB') 
+
+        img_pil = load_fun(filename)
         return img_pil
     
     def get_adjacent_bboxes(self, results):
